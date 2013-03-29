@@ -1,0 +1,17 @@
+﻿Build started 3/27/2013 9:50:40 PM.
+     1>Project "C:\Users\Karl\Documents\Programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\simple_2_decode\simple_decode.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I..\common /I"C:\Program Files\Intel\Media SDK 2013\\include" /ZI /nologo /W4 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"..\_build\Win32\Debug\obj\simple_decode\\" /Fd"..\_build\Win32\Debug\obj\simple_decode\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\common\common_utils.cpp
+         common_utils.cpp
+     1>c:\users\karl\documents\programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\common\common_utils.cpp(107): warning C4389: '!=' : signed/unsigned mismatch
+     1>c:\users\karl\documents\programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\common\common_utils.cpp(184): warning C4245: 'initializing' : conversion from 'int' to 'mfxU32', signed/unsigned mismatch
+     1>c:\users\karl\documents\programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\common\common_utils.cpp(184): warning C4189: 'None' : local variable is initialized but not referenced
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"..\_build\Win32\Debug\simple_decode.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\Intel\Media SDK 2013\\lib\Win32" libmfx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmt.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"..\_build\Win32\Debug\simple_decode.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"..\_build\Win32\Debug\simple_decode.lib" /MACHINE:X86 /SAFESEH ..\_build\Win32\Debug\obj\simple_decode\common_utils.obj
+         ..\_build\Win32\Debug\obj\simple_decode\simple_decode.obj
+         simple_decode.vcxproj -> C:\Users\Karl\Documents\Programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\simple_2_decode\..\_build\Win32\Debug\simple_decode.exe
+     1>Done Building Project "C:\Users\Karl\Documents\Programming\intel-media-sdk-tutorial-020813\intel_media_sdk_tutorial\simple_2_decode\simple_decode.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.66

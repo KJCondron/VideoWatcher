@@ -1,0 +1,45 @@
+assuming cropY and cropX == 0
+
+Y  = 
+UV = U1V1U2V2U3V3U4V4U5V5U6V6U7V7U8V8U9V9
+
+
+pixels labeled column, row
+
+pixel (0,0) = y = Y(0),         U =UV(0), V = VUV(1)
+pixel (1,0) = y = Y(1),         U =UV(0), V = VUV(1)
+pixel (0,1) = y = Y(0+pitch),   U =UV(0), V = VUV(1)
+pixel (1,1) = y = Y(1*pitch+1), U =UV(0), V = VUV(1)
+
+pixel (m,n) = y = Y
+
+
+i 0 to h / 2
+j 0 to w
+
+u value = UV + i * Pitch + j
+v value = UV + i * Pitch + j + 1
+
+i 0 to h
+j = 0 (w chunks written at a time?)
+
+y value = y + i * Pitch + j
+
+
+2 choices 
+
+a) is all 2x2 pixel black ie U = 0X80, V = 0x80 and 4 Y values = 0x00
+b) is single pixel black Y value = 0x00 and U value for pixel = 0x80, v value for pixel = 0x80
+
+
+decode reads each individual U and V value getting all 4 y values should be easy
+
+code needs to be changed to read every Y value
+
+if a single pixel is black, we can only change all color of 2x2 group because they share U and V, we could change just the brighness of that pixel
+
+so a seems most logical
+
+YYYYUV
+
+
