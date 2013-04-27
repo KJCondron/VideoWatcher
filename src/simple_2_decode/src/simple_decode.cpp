@@ -35,15 +35,15 @@ int main()
 
     // Open input H.264 elementary stream (ES) file
     FILE* fSource;
-    fopen_s(&fSource, "C:\\Users\\Karl\\Documents\\Programming\\intel-media-sdk-tutorial-020813\\S15.2013.Hurricanes.vs.Blues.x264_track1.h264", "rb");
+    fopen_s(&fSource, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\_S15.G41.Stormers.v.Crusaders_track1.h264", "rb");
     MSDK_CHECK_POINTER(fSource, MFX_ERR_NULL_PTR);
 
     // Create output YUV file
     FILE* fSink;
-    fopen_s(&fSink, "C:\\Users\\Karl\\Documents\\Programming\\intel-media-sdk-tutorial-020813\\dectest.yuv", "wb");
+    fopen_s(&fSink, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\dectest1.yuv", "wb");
 
 	FILE* fdebug;
-    fopen_s(&fdebug, "C:\\Users\\Karl\\Documents\\Programming\\intel-media-sdk-tutorial-020813\\debug.txt", "w");
+    fopen_s(&fdebug, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\debug.txt", "w");
     
     MSDK_CHECK_POINTER(fSink, MFX_ERR_NULL_PTR);
 
@@ -140,6 +140,16 @@ int main()
     int nIndex = 0;  
     mfxU32 nFrame = 0;
 
+	std::vector< FrameSection > scoreframes;
+	std::vector< FrameSection > randframes;
+
+	Region blackReg( 13, 102, 6, 2 );
+	Region whiteishReg( 10, 65, 6, 2 );
+
+	Regions r;
+	r.push_back(blackReg);
+	r.push_back(whiteishReg);
+
     //
     // Stage 1: Main decoding loop
     //
@@ -177,35 +187,46 @@ int main()
         {
             ++nFrame;
 #ifdef ENABLE_OUTPUT
-			if(nFrame > 10200 && nFrame < 20000 && nFrame % 100 == 0) {
+			if(nFrame > 22200 && nFrame < 22200 + 50 * 100 + 1 && nFrame % 100 == 0)
+			{
             
-			printf("Writing Frame number: %d\r", nFrame);
+				printf("Writing Frame number: %d\r", (nFrame - 22200) / 100);
 			
-			fprintf(fdebug, "Writing Frame number: %d\n", nFrame);	
-			sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug);
-            MSDK_BREAK_ON_ERROR(sts);
+				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 100);	
 
-			 /*if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_NV12 )       
-				 printf("4cc - NV12 \n");
+				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, r);
+				MSDK_BREAK_ON_ERROR(sts);
+				scoreframes.push_back( GetFrameSection( pmfxOutSurface, blackReg ) );
+				randframes.push_back( GetFrameSection( pmfxOutSurface, whiteishReg ) );
 
-			 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
-				 printf("4cc - YV12 \n");
+				 /*if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_NV12 )       
+					 printf("4cc - NV12 \n");
 
-			 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YUY2 )       
-				 printf("4cc - YUY2 \n");
+				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
+					 printf("4cc - YV12 \n");
 
-			 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB3 )       
-				 printf("4cc - RGB3 \n");
+				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YUY2 )       
+					 printf("4cc - YUY2 \n");
 
-			 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB4 )       
-				 printf("4cc - RGB4 \n");*/
+				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB3 )       
+					 printf("4cc - RGB3 \n");
+
+				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB4 )       
+					 printf("4cc - RGB4 \n");*/
 
             
 			}
 
-			if(nFrame > 20000)
+			if(nFrame > 30000)
 			{
+				Stats scorestdevs = CalcUVPixelStdev(scoreframes);
+				Stats randstdevs = CalcUVPixelStdev(randframes);
+
+				writeStatsDebug(fdebug, scorestdevs);
+				writeStatsDebug(fdebug, randstdevs);
+				
 				fclose(fdebug);
+				fclose(fSink);
 			}
 
 #endif

@@ -8,6 +8,7 @@
 
 #include "common_utils.h"
 #include <iostream>
+#include <algorithm>
 // =================================================================
 // Utility functions, not directly tied to Intel Media SDK functionality
 //
@@ -101,10 +102,11 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
         h = pInfo->Height;
     }
 
+	mfxU16 w4 = w*4;
     for(mfxU16 i = 0; i < h; i++) 
     {
-        nBytesRead = (mfxU32)fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w*4, fSource);
-        if (w*4 != nBytesRead)
+        nBytesRead = (mfxU32)fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w4, fSource);
+        if (w4 != nBytesRead)
             return MFX_ERR_MORE_DATA;
     }
 
@@ -165,65 +167,180 @@ mfxU16 GetYPixelValue(mfxU8* plane, mfxFrameInfo *pInfo, mfxFrameData *pData, mf
                            
 }
 
+// top, left, width and depth are coords of UV pixels
+FrameSection GetFrameSection(
+	mfxFrameSurface1 *pSurface,
+	const Region& r)
+{
+	mfxFrameInfo *pInfo = &pSurface->Info;
+    mfxFrameData *pData = &pSurface->Data;
+    
+	FrameSection ret; //( (height+1) * (width+1) );
+
+	for(mfxU32 ix = r.topRow() ; ix < r.bottomRow(); ++ix)
+		for(mfxU32 iy = r.leftCol(); iy < r.rightCol(); ++iy)
+			// ret[...] = 
+			ret.push_back(UVPixel(pInfo, pData,ix,iy));
+
+	return ret;
+	
+}
+
+
+// for a set of frames, for each pixel in the frame calc the stdev
+// of each element (YUV values) over the set of the frames
+std::vector<PixelStDev> CalcUVPixelStdev( const std::vector< FrameSection >& frames )
+{
+	// we have 6 * frames.size * frames.begin->size numbers
+	// we assume all franes are identical but that sould be enforced later
+
+	mfxU32 fSize = frames.begin()->size();
+	std::vector< PixelStDev > stdev(fSize);
+
+	// we should flatten the data and do
+	//for( mfxU32 xx =0; xx != N; ++xx )
+
+	// for now
+	for( std::vector< FrameSection >::const_iterator it = frames.begin();
+		it != frames.end();
+		++it)
+	{
+		// now iterate over the pixels in the frame
+		mfxU32  f = 0; 
+		for( FrameSection::const_iterator pIt = it->begin();
+			 pIt != it->end();
+			 ++pIt, ++f)
+		{
+			stdev[f] += *pIt; 
+		}
+
+	}
+
+	return stdev;
+
+}
+
 mfxU16 GetSumYPixelValue(mfxU8* plane, mfxFrameInfo *pInfo, mfxFrameData *pData, mfxU32 i, mfxU32 j)
 {
 	return GetYPixelValue(plane, pInfo, pData, i, j) + GetYPixelValue(plane, pInfo, pData, i+1, j) +
 		GetYPixelValue(plane, pInfo, pData, i, j+1) + GetYPixelValue(plane, pInfo, pData, i+1, j+1);
 }
 
-
-
-mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink, FILE* fdebug)
+struct inside
 {
+	mfxU32 _i, _j;
+	inside(mfxU32 i,mfxU32 j) :_i(i), _j(j) {}
+
+	bool operator()( const Regions::value_type& v )
+	{
+		return v.inside(_i,_j);
+	}
+};
+
+bool insideAny( const Regions& rs, mfxU32 i,mfxU32 j )
+{
+	bool ret = false;
+	Regions::const_iterator it = rs.begin();
+	while(!ret && it != rs.end() )
+		ret = (it++)->inside(i,j);
+
+	return ret;
+}
+
+bool borderUAny( const Regions& rs, mfxU32 i,mfxU32 j )
+{
+	bool ret = false;
+	Regions::const_iterator it = rs.begin();
+	while(!ret && it != rs.end() )
+		ret = (it++)->onBorderU(i,j);
+
+	return ret;
+}
+
+bool borderVAny( const Regions& rs, mfxU32 i,mfxU32 j )
+{
+	bool ret = false;
+	Regions::const_iterator it = rs.begin();
+	while(!ret && it != rs.end() )
+		ret = (it++)->onBorderV(i,j);
+
+	return ret;
+}
+
+mfxStatus WriteRawFrame(
+	mfxFrameSurface1 *pSurface,
+	FILE* fSink,
+	FILE* fdebug,
+	const Regions& regionsOfInterest)
+{
+	const Regions& roi = regionsOfInterest;
     mfxFrameInfo *pInfo = &pSurface->Info;
     mfxFrameData *pData = &pSurface->Data;
     mfxU32 i, j, h, w;
     mfxStatus sts = MFX_ERR_NONE;
 
 	mfxU32 Green = 0x00;
-	mfxU32 None = -127;
-
+	
     for (i = 0; i < pInfo->CropH; i++)
         sts = WriteSection(pData->Y, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
 
     h = pInfo->CropH / 2;
     w = pInfo->CropW;
 
-	static double Y1Stdev[8*60];
-	static double Y2Stdev[8*60];
-	static double Y3Stdev[8*60];
-	static double Y4Stdev[8*60];
-	static double UStdev[8*60];
-	static double VStdev[8*60];
-
 	for (i = 0; i < h; i++)
         for (j = 0; j < w; j += 2){
-				if( i > h/10 - 2 && i < h/10 + 2 && j > w/4 + 15 && j < w/4 + 20 ) 	{
-					int U = GetUVPixelValue( pData->UV, pInfo, pData, i, j, true);
-					int V = GetUVPixelValue( pData->UV, pInfo, pData, i, j, false);
-					int Y1 = GetYPixelValue( pData->Y, pInfo, pData, 2*i, j );
-					int Y2 = GetYPixelValue( pData->Y, pInfo, pData, 2*i, j+1 );
-					int Y3 = GetYPixelValue( pData->Y, pInfo, pData, 2*i+1, j );
-					int Y4 = GetYPixelValue( pData->Y, pInfo, pData, 2*i+1, j+1 );
-
-					if(fdebug)
-						fprintf(fdebug, "[%d,%d]%d:%d:%d:%d::%d::%d\n", i,j,Y1,Y2,Y3,Y4,U,V);	
-					
-					//std::cout <<"[" << i << "," << j << "]" << ":" << Y1 << ":" << Y2 << ":" << Y3 << ":" << Y4 << "::" << U << "::" << V << std::endl;
-					fwrite(&Green, 1, 1, fSink);
+				if( insideAny(roi,i,j) )
+				{
+					UVPixel uv( pInfo, pData, i, j );
+					uv.fprint(fdebug);	
 				}
-			else{
-				sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
-			}
+			
+				if( borderUAny(roi,i,j) )
+					fwrite(&Green, 1, 1, fSink);
+				else
+					sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
+			
 		}
     
 	for (i = 0; i < h; i++)
-        for (j = 1; j < w; j += 2)
-			if( i > h/10 - 2 && i < h/10 + 2 && j > w/4 + 15 && j < w/4 + 20 )
+        for (j = 1; j < w; j += 2){
+			if( borderVAny(roi,i,j)) 
 				fwrite(&Green, 1, 1, fSink);
 			else
 				sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
-
+		}
     return sts;
 }
+
+void writeStatsDebug(FILE* fdebug, const Stats& stats)
+{
+	int pCount=0;
+	for( Stats::const_iterator sit = stats.begin();
+		sit != stats.end();
+		++sit, ++pCount)
+		fprintf(fdebug, "[%d] Ave=%f:%f:%f:%f::%f:%f, StDev=%f:%f:%f:%f::%f:%f\n", 
+					pCount,
+					sit->Ave[2], sit->Ave[3], sit->Ave[4], sit->Ave[5], sit->Ave[0], sit->Ave[1],
+					sit->StDev[2], sit->StDev[3], sit->StDev[4], sit->StDev[5], sit->StDev[0], sit->StDev[1]
+				);
+}
+
+#define ASSERT(X) if(!X) throw "Assert failed" ;
+
+/*double compare( const Stats& stats, const FrameSection& pixels )
+{
+	ASSERT(stats.size == pixels.size())
+
+	FrameSection::const_iterator pit = pixels.begin();	
+	Stats::const_iterator sit = stats.begin();
+
+	for(; pit != pixels.end() && sit != stats.end();
+		++sit, ++pit)
+	{
+		double ud = sit->AU - pit->U;
+	}
+	
+}*/
+
+const double R6::epsilon = 1e-10;
 

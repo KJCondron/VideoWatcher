@@ -1,0 +1,19 @@
+rawframe is written out as (using RowCol notation)
+
+
+
+[Y11Y12Y13.....Y1WY21Y22Y23......Y2W......YH1YH2....YHW][U11U12U13...u1W/2U21U22...U2w/2.....Uh/2w/2][V11V12V13...V1W/2V21V22...V2w/2.....Vh/2w/2] 
+
+
+they are stored in object decode by intel sdk as
+
+[Y11Y12Y13.....Y1WY21Y22Y23......Y2W......YH1YH2....YHW][UV11UV12UV13...uv1W/2UV21UV22...UV2w/2.....UVh/2w/2]
+
+
+ie UV values interleaved here row = UV row and col = UV col
+
+we can think of then 2 * h/2 * w/2 UV values (2 because there are 2 values per co ord ) as h/2 * w values 
+
+so when we iterate over UV values i = UV row j = 2*col if even and j-1 = 2 * col if odd
+
+if we extract them together j = 2 * col
