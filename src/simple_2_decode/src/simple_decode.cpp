@@ -35,7 +35,7 @@ int main()
 
     // Open input H.264 elementary stream (ES) file
     FILE* fSource;
-    fopen_s(&fSource, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\_S15.G41.Stormers.v.Crusaders_track1.h264", "rb");
+    fopen_s(&fSource, "C:\\Users\\Karl\\Dropbox\\Public\\_S15.G41.Stormers.v.Crusaders_track1.h264", "rb");
     MSDK_CHECK_POINTER(fSource, MFX_ERR_NULL_PTR);
 
     // Create output YUV file
@@ -140,16 +140,23 @@ int main()
     int nIndex = 0;  
     mfxU32 nFrame = 0;
 
-	std::vector< FrameSection > scoreframes;
-	std::vector< FrameSection > randframes;
-
-	Region blackReg( 13, 102, 6, 2 );
-	Region whiteishReg( 10, 65, 6, 2 );
+	Region blackReg( "black", 13, 102, 6, 2 );
+	Region whiteishReg( "rand", 10, 65, 6, 2 );
+	Region clockReg( "clock", 23, 104, 4, 1 );
 
 	Regions r;
 	r.push_back(blackReg);
 	r.push_back(whiteishReg);
+	r.push_back(clockReg);
 
+	typedef std::pair< std::string, std::vector< FrameSection> > FrameSections;
+	std::vector< FrameSection > empty;
+	std::vector< FrameSections > frameslist;
+	//std::fill_n(frameslist.begin(), r.size(), empty);
+
+	for( Regions::iterator it = r.begin(); it != r.end(); ++it) 
+		frameslist.push_back( std::make_pair(it->m_name, empty) );
+	
     //
     // Stage 1: Main decoding loop
     //
@@ -187,18 +194,22 @@ int main()
         {
             ++nFrame;
 #ifdef ENABLE_OUTPUT
-			if(nFrame > 22200 && nFrame < 22200 + 50 * 100 + 1 && nFrame % 100 == 0)
+			if(nFrame > 22200 && nFrame < 22200 + 1000 * 50 + 1 && nFrame % 1000 == 0)
 			{
             
-				printf("Writing Frame number: %d\r", (nFrame - 22200) / 100);
+				printf("Writing Frame number: %d\r", (nFrame - 22200) / 1000);
 			
-				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 100);	
+				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
 
 				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, r);
 				MSDK_BREAK_ON_ERROR(sts);
-				scoreframes.push_back( GetFrameSection( pmfxOutSurface, blackReg ) );
-				randframes.push_back( GetFrameSection( pmfxOutSurface, whiteishReg ) );
+				
+				Regions::const_iterator r_it = r.begin();
+				std::vector< FrameSections >::iterator ll_it = frameslist.begin();
 
+				for( ; r_it != r.end(); ++r_it, ++ll_it )
+					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it ) );
+				
 				 /*if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_NV12 )       
 					 printf("4cc - NV12 \n");
 
@@ -217,14 +228,18 @@ int main()
             
 			}
 
-			if(nFrame > 30000)
+			if(nFrame > 22200 + 500 * 3000 + 1)
 			{
-				Stats scorestdevs = CalcUVPixelStdev(scoreframes);
-				Stats randstdevs = CalcUVPixelStdev(randframes);
-
-				writeStatsDebug(fdebug, scorestdevs);
-				writeStatsDebug(fdebug, randstdevs);
 				
+				for( std::vector< FrameSections >::iterator l_it = frameslist.begin();
+					l_it != frameslist.end();
+					++l_it )
+				{
+					Stats scorestdevs = CalcUVPixelStdev(l_it->second);
+					writeStatsDebug(fdebug, l_it->first, scorestdevs);
+				}
+
+
 				fclose(fdebug);
 				fclose(fSink);
 			}

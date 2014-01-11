@@ -192,7 +192,7 @@ FrameSection GetFrameSection(
 std::vector<PixelStDev> CalcUVPixelStdev( const std::vector< FrameSection >& frames )
 {
 	// we have 6 * frames.size * frames.begin->size numbers
-	// we assume all franes are identical but that sould be enforced later
+	// we assume all frames are identical but that sould be enforced later
 
 	mfxU32 fSize = frames.begin()->size();
 	std::vector< PixelStDev > stdev(fSize);
@@ -237,13 +237,16 @@ struct inside
 	}
 };
 
-bool insideAny( const Regions& rs, mfxU32 i,mfxU32 j )
+std::pair<bool, std::string> insideAny( const Regions& rs, mfxU32 i,mfxU32 j )
 {
-	bool ret = false;
+	std::pair<bool, std::string> ret = std::make_pair( false, std::string("") );
 	Regions::const_iterator it = rs.begin();
-	while(!ret && it != rs.end() )
-		ret = (it++)->inside(i,j);
-
+	while(!ret.first && it != rs.end() )
+	{
+		if( it->inside(i,j) )
+			ret = std::make_pair( true, it->m_name );
+		++it;
+	}
 	return ret;
 }
 
@@ -289,9 +292,11 @@ mfxStatus WriteRawFrame(
 
 	for (i = 0; i < h; i++)
         for (j = 0; j < w; j += 2){
-				if( insideAny(roi,i,j) )
+				std::pair<bool, std::string> inside = insideAny(roi,i,j);
+				if( inside.first )
 				{
 					UVPixel uv( pInfo, pData, i, j );
+					fprintf(fdebug, inside.second.c_str() );
 					uv.fprint(fdebug);	
 				}
 			
@@ -312,8 +317,9 @@ mfxStatus WriteRawFrame(
     return sts;
 }
 
-void writeStatsDebug(FILE* fdebug, const Stats& stats)
+void writeStatsDebug(FILE* fdebug, const std::string& name, const Stats& stats)
 {
+	fprintf(fdebug, name.c_str());
 	int pCount=0;
 	for( Stats::const_iterator sit = stats.begin();
 		sit != stats.end();

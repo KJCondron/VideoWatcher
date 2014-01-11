@@ -48,9 +48,10 @@
 	struct Region
 	{
 		mfxU32 m_top, m_left, m_height, m_width;
+		std::string m_name;
 
-		Region( mfxU32 top, mfxU32 left, mfxU32 height, mfxU32 width) :
-		m_top(top), m_left(left), m_height(height), m_width(width)
+		Region( std::string name, mfxU32 top, mfxU32 left, mfxU32 height, mfxU32 width) :
+		m_name(name), m_top(top), m_left(left), m_height(height), m_width(width)
 		{}
 
 		// i is UV coord j/2 is UV coord (see docs)
@@ -260,6 +261,6 @@ std::vector<PixelStDev> CalcUVPixelStdev( const std::vector< FrameSection >& fra
 
 typedef std::vector<PixelStDev> Stats;
 				
-void writeStatsDebug(FILE* fdebug, const Stats& stats);
+void writeStatsDebug(FILE* fdebug, const std::string& name, const Stats& stats);
 
 double compare( const Stats& stats, const FrameSection& pixels); 
