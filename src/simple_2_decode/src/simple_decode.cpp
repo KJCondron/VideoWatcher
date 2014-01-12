@@ -42,6 +42,10 @@ int main()
     FILE* fSink;
     fopen_s(&fSink, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\dectest1.yuv", "wb");
 
+	// Create output YUV file
+    FILE* fSinkDecode;
+    fopen_s(&fSinkDecode, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\dectest_decode.yuv", "wb");
+
 	FILE* fdebug;
     fopen_s(&fdebug, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\debug.txt", "w");
     
@@ -144,17 +148,17 @@ int main()
 	Region whiteishReg( "rand", 10, 65, 6, 2 );
 	Region clockReg( "clock", 23, 104, 4, 1 );
 
-	Regions r;
-	r.push_back(blackReg);
-	r.push_back(whiteishReg);
-	r.push_back(clockReg);
+	Regions rs;
+	rs.push_back(blackReg);
+	rs.push_back(whiteishReg);
+	rs.push_back(clockReg);
 
 	typedef std::pair< std::string, std::vector< FrameSection> > FrameSections;
 	std::vector< FrameSection > empty;
 	std::vector< FrameSections > frameslist;
 	//std::fill_n(frameslist.begin(), r.size(), empty);
 
-	for( Regions::iterator it = r.begin(); it != r.end(); ++it) 
+	for( Regions::iterator it = rs.begin(); it != rs.end(); ++it) 
 		frameslist.push_back( std::make_pair(it->m_name, empty) );
 	
     //
@@ -190,64 +194,58 @@ int main()
         if (MFX_ERR_NONE == sts)
             sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until decoded frame is ready
         
+
+		mfxU32 startFrm = 22200;
+		mfxU32 step = 1000;
+		mfxU32 noFrms = 8;
+		mfxU32 endFrm = startFrm + noFrms * step + 1;
+
         if (MFX_ERR_NONE == sts)
         {
             ++nFrame;
 #ifdef ENABLE_OUTPUT
-			if(nFrame > 22200 && nFrame < 22200 + 1000 * 50 + 1 && nFrame % 1000 == 0)
+			if(nFrame > startFrm && nFrame < endFrm && nFrame % step == 0)
 			{
             
 				printf("Writing Frame number: %d\r", (nFrame - 22200) / 1000);
 			
 				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
 
-				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, r);
+				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, rs);
 				MSDK_BREAK_ON_ERROR(sts);
 				
-				Regions::const_iterator r_it = r.begin();
+				Regions::const_iterator r_it = rs.begin();
 				std::vector< FrameSections >::iterator ll_it = frameslist.begin();
 
-				for( ; r_it != r.end(); ++r_it, ++ll_it )
+				for( ; r_it != rs.end(); ++r_it, ++ll_it )
 					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it ) );
 				
-				 /*if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_NV12 )       
-					 printf("4cc - NV12 \n");
-
+				 /*
 				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
 					 printf("4cc - YV12 \n");
 
-				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YUY2 )       
-					 printf("4cc - YUY2 \n");
+				 */
+   
+			}		
+#endif
+        }
+		if(nFrame > endFrm)
+			break;
+    }
 
-				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB3 )       
-					 printf("4cc - RGB3 \n");
+#ifdef ENABLE_OUTPUT
 
-				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_RGB4 )       
-					 printf("4cc - RGB4 \n");*/
-
-            
-			}
-
-			if(nFrame > 22200 + 500 * 3000 + 1)
-			{
-				
-				for( std::vector< FrameSections >::iterator l_it = frameslist.begin();
+		for( std::vector< FrameSections >::iterator l_it = frameslist.begin();
 					l_it != frameslist.end();
 					++l_it )
-				{
-					Stats scorestdevs = CalcUVPixelStdev(l_it->second);
-					writeStatsDebug(fdebug, l_it->first, scorestdevs);
-				}
-
-
-				fclose(fdebug);
-				fclose(fSink);
-			}
-
+		{
+			Stats scorestdevs = CalcUVPixelStdev(l_it->second);
+			writeStatsDebug(fdebug, l_it->first, scorestdevs);
+		}
+			
+		fclose(fdebug);
+		fclose(fSink);
 #endif
-        }            
-    }   
-
     // MFX_ERR_MORE_DATA means that file has ended, need to go to buffering loop, exit in case of other errors
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);          
@@ -279,10 +277,10 @@ int main()
         {
             ++nFrame;
 #ifdef ENABLE_OUTPUT
-            sts = WriteRawFrame(pmfxOutSurface, fSink);
+            sts = WriteRawFrame(pmfxOutSurface, fSinkDecode);
             MSDK_BREAK_ON_ERROR(sts);
 
-            printf("Frame number: %d\r", nFrame);   
+            printf("stage 2 loop - Frame number: %d\r", nFrame);   
 #endif
         }
     }
@@ -313,6 +311,7 @@ int main()
 
     fclose(fSource);
     fclose(fSink);
+	fclose(fSinkDecode);
 
     return 0;
 }

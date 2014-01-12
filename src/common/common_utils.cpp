@@ -324,7 +324,7 @@ void writeStatsDebug(FILE* fdebug, const std::string& name, const Stats& stats)
 	for( Stats::const_iterator sit = stats.begin();
 		sit != stats.end();
 		++sit, ++pCount)
-		fprintf(fdebug, "[%d] Ave=%f:%f:%f:%f::%f:%f, StDev=%f:%f:%f:%f::%f:%f\n", 
+		fprintf(fdebug, "[%d] Ave=%4.2f:%4.2f:%4.2f:%4.2f::%4.2f:%4.2f, StDev=%4.2f:%4.2f:%4.2f:%4.2f::%4.2f:%4.2f\n", 
 					pCount,
 					sit->Ave[2], sit->Ave[3], sit->Ave[4], sit->Ave[5], sit->Ave[0], sit->Ave[1],
 					sit->StDev[2], sit->StDev[3], sit->StDev[4], sit->StDev[5], sit->StDev[0], sit->StDev[1]
