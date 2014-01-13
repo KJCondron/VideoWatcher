@@ -197,7 +197,7 @@ int main()
 
 		mfxU32 startFrm = 22200;
 		mfxU32 step = 1000;
-		mfxU32 noFrms = 8;
+		mfxU32 noFrms = 7;
 		mfxU32 endFrm = startFrm + noFrms * step + 1;
 
         if (MFX_ERR_NONE == sts)
@@ -207,7 +207,7 @@ int main()
 			if(nFrame > startFrm && nFrame < endFrm && nFrame % step == 0)
 			{
             
-				printf("Writing Frame number: %d\r", (nFrame - 22200) / 1000);
+				printf("Writing Frame number: %d\r", nFrame);
 			
 				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
 
@@ -218,7 +218,7 @@ int main()
 				std::vector< FrameSections >::iterator ll_it = frameslist.begin();
 
 				for( ; r_it != rs.end(); ++r_it, ++ll_it )
-					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it ) );
+					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it, fdebug ) );
 				
 				 /*
 				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
@@ -242,7 +242,7 @@ int main()
 			Stats scorestdevs = CalcUVPixelStdev(l_it->second);
 			writeStatsDebug(fdebug, l_it->first, scorestdevs);
 		}
-			
+		
 		fclose(fdebug);
 		fclose(fSink);
 #endif

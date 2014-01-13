@@ -170,18 +170,23 @@ mfxU16 GetYPixelValue(mfxU8* plane, mfxFrameInfo *pInfo, mfxFrameData *pData, mf
 // top, left, width and depth are coords of UV pixels
 FrameSection GetFrameSection(
 	mfxFrameSurface1 *pSurface,
-	const Region& r)
+	const Region& r,
+	FILE* fdebug)
 {
 	mfxFrameInfo *pInfo = &pSurface->Info;
     mfxFrameData *pData = &pSurface->Data;
     
 	FrameSection ret; //( (height+1) * (width+1) );
 
-	for(mfxU32 ix = r.topRow() ; ix < r.bottomRow(); ++ix)
-		for(mfxU32 iy = r.leftCol(); iy < r.rightCol(); ++iy)
+	for(mfxU32 ix = r.topRow() ; ix <= r.bottomRow(); ++ix)
+		for(mfxU32 iy = r.leftCol(); iy <= r.rightCol(); ++iy)
+		{
+			UVPixel uv(pInfo, pData,ix,iy);
+			fprintf(fdebug, "getFrameSection\n");
+			uv.fprint(fdebug);
 			// ret[...] = 
-			ret.push_back(UVPixel(pInfo, pData,ix,iy));
-
+			ret.push_back(uv);
+		}
 	return ret;
 	
 }
@@ -191,7 +196,7 @@ FrameSection GetFrameSection(
 // of each element (YUV values) over the set of the frames
 std::vector<PixelStDev> CalcUVPixelStdev( const std::vector< FrameSection >& frames )
 {
-	// we have 6 * frames.size * frames.begin->size numbers
+	// we have 6 (4*Y U, V) * frames.size * frames.begin->size  numbers
 	// we assume all frames are identical but that sould be enforced later
 
 	mfxU32 fSize = frames.begin()->size();
@@ -292,13 +297,13 @@ mfxStatus WriteRawFrame(
 
 	for (i = 0; i < h; i++)
         for (j = 0; j < w; j += 2){
-				std::pair<bool, std::string> inside = insideAny(roi,i,j);
+				/*std::pair<bool, std::string> inside = insideAny(roi,i,j);
 				if( inside.first )
 				{
 					UVPixel uv( pInfo, pData, i, j );
 					fprintf(fdebug, inside.second.c_str() );
 					uv.fprint(fdebug);	
-				}
+				}*/
 			
 				if( borderUAny(roi,i,j) )
 					fwrite(&Green, 1, 1, fSink);

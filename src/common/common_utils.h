@@ -137,7 +137,8 @@ typedef std::vector< UVPixel > FrameSection;
 
 FrameSection GetFrameSection(
 	mfxFrameSurface1 *pSurface,
-	const Region& r);
+	const Region& r,
+	FILE* fdebug);
 
 struct R6 : public boost::array<double, 6>
 {
