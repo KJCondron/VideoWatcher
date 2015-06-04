@@ -8,6 +8,7 @@
 
 #include "common_utils.h"
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 // =================================================================
 // Utility functions, not directly tied to Intel Media SDK functionality
@@ -173,20 +174,32 @@ FrameSection GetFrameSection(
 	const Region& r,
 	FILE* fdebug)
 {
+	// This is one frame, so for the entire region we want to write 1 row
+	// to give us our m*n*6 attributes. It doesn't really matter the
+	// order, because based on analysis of the data PLR or other
+	// machine learning algo will drop (potentially) attributes
+
 	mfxFrameInfo *pInfo = &pSurface->Info;
     mfxFrameData *pData = &pSurface->Data;
     
 	FrameSection ret; //( (height+1) * (width+1) );
 
+	std::stringstream ss;
+	const char* sep = "";
 	for(mfxU32 ix = r.topRow() ; ix <= r.bottomRow(); ++ix)
 		for(mfxU32 iy = r.leftCol(); iy <= r.rightCol(); ++iy)
 		{
 			UVPixel uv(pInfo, pData,ix,iy);
-			fprintf(fdebug, "getFrameSection\n");
-			uv.fprint(fdebug);
+			ss << sep << uv.getAttr();
+			sep = ",";
+			//fprintf(fdebug, "getFrameSection\n");
+			//uv.fprint(fdebug);
 			// ret[...] = 
 			ret.push_back(uv);
 		}
+		ss << std::endl;
+		fprintf(fdebug, ss.str().c_str());
+
 	return ret;
 	
 }

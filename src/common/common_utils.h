@@ -27,6 +27,9 @@
 #define MSDK_SAFE_RELEASE(X)            {if (X) { X->Release(); X = NULL; }}
 #define MSDK_MAX(A, B)			        (((A) > (B)) ? (A) : (B))
 
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 // =================================================================
 // Utility functions, not directly tied to Media SDK functionality
@@ -126,6 +129,19 @@ struct UVPixel
 		fprintf(file, "[%d,%d]%d:%d:%d:%d::%d::%d\n", 
 		               m_i, m_j/2,Y1,Y2,Y3,Y4,U,V);	
 						
+	}
+
+	std::string getAttr() const {
+		char s = ',';
+		std::stringstream ss;
+		ss.fill(' ');
+		ss << std::setw(3) << U << s <<
+			  std::setw(3) << V << s <<
+			  std::setw(3) << Y1 << s <<
+			  std::setw(3) << Y2 << s << 
+			  std::setw(3) << Y3 << s <<
+			  std::setw(3) << Y4;
+		return ss.str(); 
 	}
 
 	mfxU16 U, V, Y1, Y2, Y3, Y4;

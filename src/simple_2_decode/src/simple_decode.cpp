@@ -48,6 +48,10 @@ int main()
 
 	FILE* fdebug;
     fopen_s(&fdebug, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\debug.txt", "w");
+
+	FILE* fclkreg;
+    fopen_s(&fclkreg, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\clockreg.txt", "w");
+    
     
     MSDK_CHECK_POINTER(fSink, MFX_ERR_NULL_PTR);
 
@@ -108,6 +112,9 @@ int main()
     mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
     mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
     mfxU8* surfaceBuffers = (mfxU8 *)new mfxU8[surfaceSize * numSurfaces];
+
+	printf("height %d", height);
+	printf("width %d", width);
     
     mfxFrameSurface1** pmfxSurfaces = new mfxFrameSurface1*[numSurfaces];
     MSDK_CHECK_POINTER(pmfxSurfaces, MFX_ERR_MEMORY_ALLOC);       
@@ -196,8 +203,8 @@ int main()
         
 
 		mfxU32 startFrm = 22200;
-		mfxU32 step = 1000;
-		mfxU32 noFrms = 7;
+		mfxU32 step = 10;
+		mfxU32 noFrms = 700;
 		mfxU32 endFrm = startFrm + noFrms * step + 1;
 
         if (MFX_ERR_NONE == sts)
@@ -209,7 +216,7 @@ int main()
             
 				printf("Writing Frame number: %d\r", nFrame);
 			
-				fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
+				//fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
 
 				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, rs);
 				MSDK_BREAK_ON_ERROR(sts);
@@ -217,8 +224,12 @@ int main()
 				Regions::const_iterator r_it = rs.begin();
 				std::vector< FrameSections >::iterator ll_it = frameslist.begin();
 
+				// this writes stuff for all regions, but we really want 1 file per region
+				// and are only interestd in clock region
 				for( ; r_it != rs.end(); ++r_it, ++ll_it )
 					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it, fdebug ) );
+
+				GetFrameSection(pmfxOutSurface, clockReg, fclkreg);
 				
 				 /*
 				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
@@ -240,7 +251,7 @@ int main()
 					++l_it )
 		{
 			Stats scorestdevs = CalcUVPixelStdev(l_it->second);
-			writeStatsDebug(fdebug, l_it->first, scorestdevs);
+			//writeStatsDebug(fdebug, l_it->first, scorestdevs);
 		}
 		
 		fclose(fdebug);

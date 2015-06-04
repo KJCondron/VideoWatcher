@@ -1,0 +1,14 @@
+Each frame is a row, with up to 720*400*6 attributes and 1 target value
+attribute size can be restricted by defining a specific set of pixels to act as a representative sample
+
+1) define score board black section, as a very specific n*m range. n*m*6 attributes, target value 1 for scoreboard presesnt 0 for not present.
+This is a good model for presenece / absence of scoreboard but not so good if we don't know where the score board is
+
+
+2) Sample 1000 positions spaced equaly over the frame. 6000 attributes. 
+	a) Target value = 1 score board present, 0 if not. Obv some positions are unrelated
+	b) Each pixel is a row with just 6 attributes Target value is 1 if in area of interest, 0 if not.
+		Quite hard to generate this data set, but this model should be good at determining pixels in the scoreboard
+
+
+maybe compare 2 with variance of 6 attributes on top of model 1 to eliminate many frames with no scoreboard 
