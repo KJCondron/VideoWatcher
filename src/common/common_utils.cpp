@@ -171,8 +171,7 @@ mfxU16 GetYPixelValue(mfxU8* plane, mfxFrameInfo *pInfo, mfxFrameData *pData, mf
 // top, left, width and depth are coords of UV pixels
 FrameSection GetFrameSection(
 	mfxFrameSurface1 *pSurface,
-	const Region& r,
-	FILE* fdebug)
+	const Region& r)
 {
 	// This is one frame, so for the entire region we want to write 1 row
 	// to give us our m*n*6 attributes. It doesn't really matter the
@@ -198,7 +197,7 @@ FrameSection GetFrameSection(
 			ret.push_back(uv);
 		}
 		ss << std::endl;
-		fprintf(fdebug, ss.str().c_str());
+		fprintf(r.file(), ss.str().c_str());
 
 	return ret;
 	
@@ -291,7 +290,6 @@ bool borderVAny( const Regions& rs, mfxU32 i,mfxU32 j )
 mfxStatus WriteRawFrame(
 	mfxFrameSurface1 *pSurface,
 	FILE* fSink,
-	FILE* fdebug,
 	const Regions& regionsOfInterest)
 {
 	const Regions& roi = regionsOfInterest;

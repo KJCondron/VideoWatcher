@@ -52,6 +52,12 @@ int main()
 	FILE* fclkreg;
     fopen_s(&fclkreg, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\clockreg.txt", "w");
     
+	FILE* freg1;
+    fopen_s(&freg1, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\reg1.txt", "w");
+    
+	FILE* freg2;
+    fopen_s(&freg2, "C:\\Users\\Karl\\Documents\\GitHub\\VideoWatcher\\reg2.txt", "w");
+    
     
     MSDK_CHECK_POINTER(fSink, MFX_ERR_NULL_PTR);
 
@@ -151,9 +157,9 @@ int main()
     int nIndex = 0;  
     mfxU32 nFrame = 0;
 
-	Region blackReg( "black", 13, 102, 6, 2 );
-	Region whiteishReg( "rand", 10, 65, 6, 2 );
-	Region clockReg( "clock", 23, 104, 4, 1 );
+	Region blackReg( "black", 13, 102, 6, 2, freg1 );
+	Region whiteishReg( "rand", 10, 65, 6, 2, freg2 );
+	Region clockReg( "clock", 23, 104, 4, 1, fclkreg );
 
 	Regions rs;
 	rs.push_back(blackReg);
@@ -218,7 +224,7 @@ int main()
 			
 				//fprintf(fdebug, "Writing Frame number: %d\n", (nFrame - 22200) / 1000);	
 
-				sts = WriteRawFrame(pmfxOutSurface, fSink, fdebug, rs);
+				sts = WriteRawFrame(pmfxOutSurface, fSink, rs);
 				MSDK_BREAK_ON_ERROR(sts);
 				
 				Regions::const_iterator r_it = rs.begin();
@@ -227,9 +233,9 @@ int main()
 				// this writes stuff for all regions, but we really want 1 file per region
 				// and are only interestd in clock region
 				for( ; r_it != rs.end(); ++r_it, ++ll_it )
-					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it, fdebug ) );
+					(*ll_it).second.push_back( GetFrameSection( pmfxOutSurface, *r_it ) );
 
-				GetFrameSection(pmfxOutSurface, clockReg, fclkreg);
+				//GetFrameSection(pmfxOutSurface, clockReg);
 				
 				 /*
 				 if( pmfxOutSurface->Info.FourCC == MFX_FOURCC_YV12 )       
@@ -256,6 +262,9 @@ int main()
 		
 		fclose(fdebug);
 		fclose(fSink);
+		fclose(fclkreg);
+		fclose(freg1);
+		fclose(freg2);
 #endif
     // MFX_ERR_MORE_DATA means that file has ended, need to go to buffering loop, exit in case of other errors
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);

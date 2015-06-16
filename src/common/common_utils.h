@@ -52,9 +52,17 @@
 	{
 		mfxU32 m_top, m_left, m_height, m_width;
 		std::string m_name;
+		FILE* m_file;
 
-		Region( std::string name, mfxU32 top, mfxU32 left, mfxU32 height, mfxU32 width) :
-		m_name(name), m_top(top), m_left(left), m_height(height), m_width(width)
+		Region( 
+			std::string name,
+			mfxU32 top,
+			mfxU32 left,
+			mfxU32 height,
+			mfxU32 width,
+			FILE* debugFile) :
+		m_name(name), m_top(top), m_left(left), m_height(height), m_width(width),
+			m_file(debugFile)
 		{}
 
 		// i is UV coord j/2 is UV coord (see docs)
@@ -85,6 +93,8 @@
 		mfxU32 bottomRow() const { return m_top+m_height; }
 		mfxU32 leftCol() const { return m_left*2; }
 		mfxU32 rightCol() const { return m_left*2+m_width*2; }
+
+		FILE* file() const { return m_file; }
 		
 		 
 	};
@@ -95,7 +105,6 @@
 mfxStatus WriteRawFrame(
 	mfxFrameSurface1 *pSurface,
 	FILE* fSink,
-	FILE* fdebug = 0,
 	const Regions& regionsOfInterest = Regions());
 
 // Write bit stream data for frame to file
@@ -153,8 +162,7 @@ typedef std::vector< UVPixel > FrameSection;
 
 FrameSection GetFrameSection(
 	mfxFrameSurface1 *pSurface,
-	const Region& r,
-	FILE* fdebug);
+	const Region& r);
 
 struct R6 : public boost::array<double, 6>
 {
